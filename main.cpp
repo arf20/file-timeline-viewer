@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
         int iwidth = 1, iheight = 1;
         SDL_GetWindowSize(window, &iwidth, &iheight);
         width = iwidth; height = iheight;
+        time_t itime_min = time_min; time_t itime_max = time_max;
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
@@ -151,14 +152,24 @@ int main(int argc, char **argv) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         SDL_RenderDrawLine(renderer, 2 * margin, margin, 2 * margin, height - margin);
 
+        std::tm tm = *std::localtime(&itime_min);
+        std::stringstream ss;
+        ss << std::put_time(&tm, "%d-%m-%Y %T");
+        stringRGBA(renderer, 3 * margin, margin, ss.str().c_str(), 255, 255, 255, 255);
+        ss.str(std::string());
+
+        tm = *std::localtime(&itime_max);
+        ss << std::put_time(&tm, "%d-%m-%Y %T");
+        stringRGBA(renderer, 3 * margin, height - margin, ss.str().c_str(), 255, 255, 255, 255);
+        ss.str(std::string());
+
         for (const file& f : files) {
-            std::tm tm = *std::localtime(&f.timestamp);
-            std::stringstream ss;
+            tm = *std::localtime(&f.timestamp);
             ss << f.name << " " << std::put_time(&tm, "%d-%m-%Y %T");
             float y = mapfloat(f.timestamp, time_min, time_max, margin, height - margin);
             SDL_RenderDrawLine(renderer, margin, y, 3 * margin, y);
             stringRGBA(renderer, 4 * margin, y, ss.str().c_str(), 255, 255, 255, 255);
-
+            ss.str(std::string());
         }
 
         SDL_RenderPresent(renderer);
