@@ -5,5 +5,5 @@ of for example a picture folder
 ## Build
 Install SDL2 dependency and then:
 ```
-g++ -std=c++17 main.cpp -lSDL2 -lSDL2main -lraw -o file-timeline-viewer
+g++ -std=c++17 main.cpp -lSDL2 -lSDL2main -lSDL2_gfx -lraw -o file-timeline-viewer
 ```
