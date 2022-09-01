@@ -1,9 +1,67 @@
 #include <iostream>
+#include <filesystem>
+#include <ctime>
+#include <vector>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
-int main() {
+#include "libraw/libraw.h"
+
+struct file {
+    std::string name;
+    time_t timestamp;
+};
+
+int main(int argc, char **argv) {
+    if (argc < 2) {
+        std::cout << "Specify a path." << std::endl << "Usage: file-timeline-viewer <path>" << std::endl;
+        return 0;
+    }
+    if (argc > 2) {
+        std::cout << "Specify only one argument, a path." << std::endl << "Usage: file-timeline-viewer <path>" << std::endl;
+        return 0;
+    }
+
+    std::string path(argv[1]);
+
+    if (!std::filesystem::exists(path)) {
+        std::cout << "Specified path does not exist." << std::endl << "Usage: file-timeline-viewer <path>" << std::endl;
+        return 0;
+    }
+    if (!std::filesystem::is_directory(path)) {
+        std::cout << "Specified path is not a directory." << std::endl << "Usage: file-timeline-viewer <path>" << std::endl;
+        return 0;
+    }
+    
+    std::vector<file> files;
+    LibRaw iProcessor;
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        if (!std::filesystem::is_regular_file(entry.path())) continue;
+        file f;
+        f.name = entry.path().filename();
+        // ext fs's don't have creation date, well fuck, its all up to the RAW header to have a Shoot date, so this will be limited by the file and by what libraw can do now
+
+        int res = 0;
+        if ((res = iProcessor.open_file(entry.path().c_str())) != LIBRAW_SUCCESS) {
+            if (res > 0) std::cout << "Error opening file " << f.name << ": " << strerror(res) << std::endl;
+            else std::cout << "LibRaw error in file " << f.name << ": " << LibRaw::strerror(res) << std::endl;
+            continue;
+        }
+
+        f.timestamp = iProcessor.imgdata.other.timestamp;
+
+        // debug print timestamps
+        std::tm tm = *std::localtime(&f.timestamp);
+        std::cout << f.name << "\t" << std::put_time(&tm, "%d-%m-%Y %T") << std::endl;
+
+        files.push_back(f);
+        iProcessor.recycle();
+    }
+
+
+
+
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
         std::cout << "Error initializing SDL2: " << SDL_GetError() << std::endl;
 
